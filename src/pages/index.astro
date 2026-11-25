@@ -1,0 +1,590 @@
+---
+import InvoiceSheet from '../components/InvoiceSheet.astro';
+import '@fontsource/source-sans-pro/400.css';
+import '@fontsource/source-sans-pro/600.css';
+import '@fontsource/source-sans-pro/700.css';
+import '@fontsource/roboto-mono/400.css';
+import '@fontsource/roboto-mono/500.css';
+import '@fontsource/roboto-mono/700.css';
+import '../styles/global.css';
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Generá notas de venta y descargalas como PDF en un solo paso."
+    />
+    <title>Generador de boletas</title>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="7" />
+              <path d="M12 2v5M12 17v5M2 12h5M17 12h5" />
+              <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+            </svg>
+          </span>
+          <h1>Generador de boletas</h1>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <div class="form-column">
+        <form id="invoice-form" class="panel" novalidate>
+          <h2>Datos de la empresa</h2>
+          <div class="field-grid">
+            <div class="field field--wide">
+              <span id="logo-label">Logo (opcional)</span>
+              <div class="logo-row">
+                <div class="logo-thumb" aria-hidden="true">
+                  <span id="logo-initials-thumb">?</span>
+                  <img id="logo-thumb-img" alt="" hidden />
+                </div>
+                <div class="logo-actions">
+                  <input
+                    type="file"
+                    id="logo-input"
+                    accept="image/*"
+                    aria-labelledby="logo-label"
+                  />
+                  <button
+                    type="button"
+                    id="logo-remove"
+                    class="btn btn-secondary"
+                  >
+                    Quitar logo
+                  </button>
+                  <p class="hint">
+                    Si no subís uno, usamos las iniciales de la empresa.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="company-name">Nombre de la empresa</label>
+              <input
+                type="text"
+                id="company-name"
+                data-company="companyName"
+                autocomplete="organization"
+                placeholder="Nombre o razón social"
+              />
+            </div>
+            <div class="field">
+              <label for="date">Fecha</label>
+              <input type="date" id="date" />
+            </div>
+            <div class="field">
+              <label for="phone">Teléfono</label>
+              <input
+                type="tel"
+                id="phone"
+                data-company="phone"
+                autocomplete="tel"
+                placeholder="809-555-1234"
+              />
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input
+                type="email"
+                id="email"
+                data-company="email"
+                autocomplete="email"
+                placeholder="hola@empresa.com"
+              />
+            </div>
+            <div class="field">
+              <label for="address">Dirección</label>
+              <input
+                type="text"
+                id="address"
+                data-company="address"
+                autocomplete="street-address"
+                placeholder="Calle y número"
+              />
+            </div>
+            <div class="field">
+              <label for="city">Ciudad/pueblo</label>
+              <input
+                type="text"
+                id="city"
+                data-company="city"
+                autocomplete="address-level2"
+                placeholder="Tu ciudad"
+              />
+            </div>
+          </div>
+        </form>
+
+        <section class="panel" aria-labelledby="items-heading">
+          <h2 id="items-heading">Ítems de la boleta</h2>
+          <div class="table-scroll">
+            <table class="items-table">
+              <thead>
+                <tr>
+                  <th scope="col">Cantidad</th>
+                  <th scope="col">Descripción</th>
+                  <th scope="col">Costo</th>
+                  <th scope="col">Importe</th>
+                  <th scope="col"><span class="sr-only">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody id="items-body"></tbody>
+            </table>
+          </div>
+          <template id="item-row-template">
+            <tr class="item-row">
+              <td data-label="Cantidad">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  data-field="quantity"
+                  aria-label="Cantidad"
+                  placeholder="0"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  data-field="description"
+                  aria-label="Descripción"
+                  placeholder="Descripción del ítem"
+                />
+              </td>
+              <td data-label="Costo">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  data-field="cost"
+                  aria-label="Costo"
+                  placeholder="0,00"
+                />
+              </td>
+              <td class="amount-cell" data-label="Importe">$0,00</td>
+              <td>
+                <button
+                  type="button"
+                  class="btn-icon"
+                  data-action="remove-item"
+                  aria-label="Quitar este ítem"
+                  title="Quitar ítem"
+                >
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          </template>
+          <div class="actions">
+            <button type="button" id="add-item" class="btn btn-secondary">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Agregar ítem
+            </button>
+          </div>
+          <p class="hint">El importe de cada fila se calcula solo.</p>
+        </section>
+
+        <section class="panel" aria-labelledby="totals-heading">
+          <h2 id="totals-heading">Observaciones y totales</h2>
+          <div class="field">
+            <label for="observations">Observaciones</label>
+            <textarea
+              id="observations"
+              placeholder="Escribí aquí las notas de la boleta"
+            ></textarea>
+          </div>
+          <div class="field-grid" style="margin-top: 14px">
+            <div class="field">
+              <label for="iva-percent">IVA (%)</label>
+              <div class="input-suffix">
+                <input type="number" id="iva-percent" min="0" max="100" step="0.01" value="0" />
+                <span>%</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="discount-percent">Descuento (%)</label>
+              <div class="input-suffix">
+                <input type="number" id="discount-percent" min="0" max="100" step="0.01" value="0" />
+                <span>%</span>
+              </div>
+            </div>
+          </div>
+          <div class="summary" aria-live="polite">
+            <div class="summary-row">
+              <span>Subtotal</span><span id="sum-subtotal">$0,00</span>
+            </div>
+            <div class="summary-row">
+              <span>IVA</span><span id="sum-iva">$0,00</span>
+            </div>
+            <div class="summary-row">
+              <span>Descuento</span><span id="sum-discount">$0,00</span>
+            </div>
+            <div class="summary-row summary-row--total">
+              <span>Total</span><span id="sum-total">$0,00</span>
+            </div>
+          </div>
+          <div class="actions">
+            <button type="button" id="download-pdf" class="btn btn-primary">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3h16v-3" />
+              </svg>
+              Descargar PDF
+            </button>
+            <button type="button" id="clear-button" class="btn btn-secondary">
+              Vaciar boleta
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <div class="preview-column">
+        <div class="preview-heading">
+          <h2>Vista previa</h2>
+        </div>
+        <InvoiceSheet id="invoice-sheet" />
+      </div>
+    </main>
+
+    <div id="export-host" class="export-host" aria-hidden="true">
+      <InvoiceSheet id="export-sheet" exportSheet />
+    </div>
+
+    <script>
+      import {
+        calculateInvoice,
+        formatAmount,
+        formatDate,
+        getInitials,
+      } from '../lib/invoice.js';
+      import { loadCompany, saveCompany } from '../lib/storage.js';
+
+      const byId = (id) => document.getElementById(id);
+      const itemsBody = byId('items-body');
+      const rowTemplate = byId('item-row-template');
+      const sheets = [byId('invoice-sheet'), byId('export-sheet')];
+      const previewRowsBody = sheets[0].querySelector('[data-bind="items"]');
+      const state = { company: loadCompany() };
+
+      function todayISO() {
+        const now = new Date();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${now.getFullYear()}-${month}-${day}`;
+      }
+
+      function createItemRow() {
+        const fragment = rowTemplate.content.cloneNode(true);
+        const row = fragment.querySelector('.item-row');
+        itemsBody.appendChild(fragment);
+        return row;
+      }
+
+      function readForm() {
+        const items = [...itemsBody.querySelectorAll('.item-row')].map((row) => ({
+          quantity: row.querySelector('[data-field="quantity"]').value,
+          description: row.querySelector('[data-field="description"]').value,
+          cost: row.querySelector('[data-field="cost"]').value,
+        }));
+
+        const invoice = calculateInvoice(items, {
+          ivaPercent: byId('iva-percent').value,
+          discountPercent: byId('discount-percent').value,
+        });
+
+        return { items: invoice.items, invoice };
+      }
+
+      function renderSheet(sheet, items, invoice) {
+        const bind = (name) => sheet.querySelector(`[data-bind="${name}"]`);
+        const company = state.company;
+        const logo = bind('logo');
+        const initials = bind('initials');
+
+        if (company.logo) {
+          logo.src = company.logo;
+          logo.hidden = false;
+          initials.hidden = true;
+        } else {
+          logo.hidden = true;
+          logo.removeAttribute('src');
+          initials.hidden = false;
+          initials.textContent = getInitials(company.companyName);
+        }
+
+        bind('company').textContent = company.companyName || 'TU EMPRESA';
+        bind('address').textContent = company.address;
+        bind('city').textContent = company.city;
+        bind('phone').textContent = company.phone;
+        bind('email').textContent = company.email;
+        bind('date').textContent = formatDate(byId('date').value);
+        bind('observations').textContent = byId('observations').value || '—';
+        bind('subtotal').textContent = formatAmount(invoice.subtotal);
+        bind('iva-label').textContent = `IVA (${invoice.ivaPercent}%)`;
+        bind('iva').textContent = formatAmount(invoice.ivaAmount);
+        bind('discount').textContent = formatAmount(invoice.discountAmount);
+        bind('total').textContent = formatAmount(invoice.total);
+
+        const body = bind('items');
+        body.replaceChildren();
+        const visibleItems = items.filter(
+          (item) => item.description || item.quantity || item.cost,
+        );
+
+        if (visibleItems.length === 0) {
+          const row = document.createElement('tr');
+          row.className = 'empty-row';
+          const cell = document.createElement('td');
+          cell.colSpan = 4;
+          const action =
+            sheet.id === 'invoice-sheet'
+              ? '<button type="button" class="btn btn-secondary" data-action="add-from-preview">Agregar primer ítem</button>'
+              : '';
+          cell.innerHTML = `
+            <div class="empty-state">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <path d="M7 9h10M7 13h6" />
+              </svg>
+              <span>Sin ítems todavía</span>
+              ${action}
+            </div>
+          `;
+          row.appendChild(cell);
+          body.appendChild(row);
+          return;
+        }
+
+        for (const item of visibleItems) {
+          const row = document.createElement('tr');
+          const values = [
+            [String(item.quantity), 'num'],
+            [item.description, ''],
+            [formatAmount(item.cost), 'num'],
+            [formatAmount(item.amount), 'num'],
+          ];
+
+          for (const [text, className] of values) {
+            const cell = document.createElement('td');
+            cell.textContent = text;
+            if (className) cell.className = className;
+            row.appendChild(cell);
+          }
+
+          body.appendChild(row);
+        }
+      }
+
+      function update() {
+        const { items, invoice } = readForm();
+
+        [...itemsBody.querySelectorAll('.item-row')].forEach((row, index) => {
+          row.querySelector('.amount-cell').textContent = formatAmount(
+            invoice.items[index].amount,
+          );
+        });
+
+        byId('sum-subtotal').textContent = formatAmount(invoice.subtotal);
+        byId('sum-iva').textContent = formatAmount(invoice.ivaAmount);
+        byId('sum-discount').textContent = formatAmount(invoice.discountAmount);
+        byId('sum-total').textContent = formatAmount(invoice.total);
+
+        const thumbImage = byId('logo-thumb-img');
+        const thumbInitials = byId('logo-initials-thumb');
+        if (state.company.logo) {
+          thumbImage.src = state.company.logo;
+          thumbImage.hidden = false;
+          thumbInitials.hidden = true;
+        } else {
+          thumbImage.hidden = true;
+          thumbImage.removeAttribute('src');
+          thumbInitials.hidden = false;
+          thumbInitials.textContent = getInitials(state.company.companyName);
+        }
+
+        for (const sheet of sheets) renderSheet(sheet, items, invoice);
+      }
+
+      async function fileToLogo(file) {
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+
+        const image = new Image();
+        image.src = dataUrl;
+        await image.decode();
+
+        const maxSize = 240;
+        const scale = Math.min(
+          1,
+          maxSize / Math.max(image.width, image.height),
+        );
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        return canvas.toDataURL('image/png');
+      }
+
+      async function downloadPdf() {
+        const button = byId('download-pdf');
+        const originalContent = button.innerHTML;
+
+        button.disabled = true;
+        button.textContent = 'Generando PDF...';
+
+        try {
+          const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+            import('html2canvas'),
+            import('jspdf'),
+          ]);
+
+          const canvas = await html2canvas(byId('export-sheet'), {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            useCORS: true,
+            onclone: (clonedDoc) => {
+              const host = clonedDoc.getElementById('export-host');
+              host.style.left = '0px';
+              host.style.top = '0px';
+            },
+          });
+
+          const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+
+          let width = pageWidth;
+          let height = (canvas.height * width) / canvas.width;
+
+          if (height > pageHeight) {
+            height = pageHeight;
+            width = (canvas.width * height) / canvas.height;
+          }
+
+          pdf.addImage(
+            canvas.toDataURL('image/png'),
+            'PNG',
+            (pageWidth - width) / 2,
+            0,
+            width,
+            height,
+          );
+          pdf.save(`boleta-${byId('date').value || 'sin-fecha'}.pdf`);
+        } catch (error) {
+          console.error('No se pudo generar el PDF', error);
+          alert('No se pudo generar el PDF. Probá de nuevo.');
+        } finally {
+          button.disabled = false;
+          button.innerHTML = originalContent;
+        }
+      }
+
+      byId('invoice-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+      });
+
+      document.addEventListener('input', (event) => {
+        const key = event.target.dataset?.company;
+        if (key) {
+          state.company[key] = event.target.value;
+          saveCompany(state.company);
+        }
+        update();
+      });
+
+      byId('add-item').addEventListener('click', () => {
+        createItemRow();
+        update();
+      });
+
+      itemsBody.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-action="remove-item"]');
+        if (!button) return;
+        button.closest('.item-row').remove();
+        update();
+      });
+
+      previewRowsBody.addEventListener('click', (event) => {
+        if (!event.target.closest('[data-action="add-from-preview"]')) return;
+        createItemRow();
+        update();
+      });
+
+      byId('logo-input').addEventListener('change', async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        try {
+          state.company.logo = await fileToLogo(file);
+          saveCompany(state.company);
+          update();
+        } catch (error) {
+          console.error('No se pudo leer el logo', error);
+          alert('No se pudo leer la imagen del logo.');
+        }
+      });
+
+      byId('logo-remove').addEventListener('click', () => {
+        state.company.logo = '';
+        byId('logo-input').value = '';
+        saveCompany(state.company);
+        update();
+      });
+
+      byId('clear-button').addEventListener('click', () => {
+        const confirmed = confirm(
+          '¿Vaciar la boleta? Los datos de la empresa se conservan.',
+        );
+        if (!confirmed) return;
+
+        byId('observations').value = '';
+        byId('iva-percent').value = '0';
+        byId('discount-percent').value = '0';
+        byId('date').value = todayISO();
+        itemsBody.replaceChildren();
+        createItemRow();
+        createItemRow();
+        update();
+      });
+
+      byId('download-pdf').addEventListener('click', downloadPdf);
+
+      for (const key of [
+        'companyName',
+        'phone',
+        'email',
+        'address',
+        'city',
+      ]) {
+        const value = state.company[key];
+        if (value) {
+          document.querySelector(`[data-company="${key}"]`).value = value;
+        }
+      }
+
+      byId('date').value = todayISO();
+      createItemRow();
+      createItemRow();
+      update();
+    </script>
+  </body>
+</html>

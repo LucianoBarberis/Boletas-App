@@ -1,0 +1,66 @@
+---
+const { id, exportSheet = false } = Astro.props;
+---
+
+<article id={id} class:list={['sheet', { 'sheet--export': exportSheet }]} data-sheet>
+  <div class="sheet-top">
+    <div class="brand" aria-hidden="true">
+      <span data-bind="initials">?</span>
+      <img data-bind="logo" alt="Logo de la empresa" hidden />
+    </div>
+    <div class="company-info">
+      <strong data-bind="company">TU EMPRESA</strong>
+      <div data-bind="address"></div>
+      <div data-bind="city"></div>
+      <div data-bind="phone"></div>
+      <div data-bind="email"></div>
+    </div>
+  </div>
+
+  <div class="sheet-heading">
+    <h2 class="sheet-title">NOTA DE VENTA</h2>
+    <div class="sheet-date">
+      <span class="sheet-date-label">Fecha</span>
+      <span data-bind="date"></span>
+    </div>
+  </div>
+
+  <table class="sheet-table">
+    <colgroup>
+      <col class="col-qty" />
+      <col class="col-desc" />
+      <col class="col-cost" />
+      <col class="col-amount" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th scope="col">Cantidad</th>
+        <th scope="col">Descripción</th>
+        <th scope="col">Costo</th>
+        <th scope="col">Importe</th>
+      </tr>
+    </thead>
+    <tbody data-bind="items"></tbody>
+  </table>
+
+  <div class="observations">
+    <h3>Observaciones</h3>
+    <p data-bind="observations"></p>
+  </div>
+
+  <div class="totals">
+    <div class="totals-row">
+      <span>Subtotal</span><span data-bind="subtotal">$0,00</span>
+    </div>
+    <div class="totals-row">
+      <span data-bind="iva-label">IVA</span>
+      <span data-bind="iva">$0,00</span>
+    </div>
+    <div class="totals-row">
+      <span>Descuento</span><span data-bind="discount">$0,00</span>
+    </div>
+    <div class="totals-row totals-row--grand">
+      <span>Total</span><span data-bind="total">$0,00</span>
+    </div>
+  </div>
+</article>
