@@ -144,6 +144,12 @@ body {
   animation: rise 420ms var(--ease) both;
 }
 
+.form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
 .form-column .panel:nth-child(2) {
   animation-delay: 80ms;
 }
@@ -287,10 +293,31 @@ textarea {
   min-width: 0;
 }
 
-.logo-actions input[type="file"] {
-  max-width: 100%;
-  font-size: 0.8125rem;
-  color: var(--charcoal);
+.logo-actions .btn {
+  min-height: 44px;
+}
+
+.logo-actions .btn--logo {
+  border-style: dashed;
+}
+
+.logo-actions input[type="file"]:focus-visible + .btn--logo {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
+}
+
+.logo-filename {
+  flex-basis: 100%;
+  overflow: hidden;
+  color: var(--navy);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logo-filename:empty {
+  display: none;
 }
 
 .hint {
@@ -792,10 +819,9 @@ textarea {
   }
 
   .items-table .item-row {
-    position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 8px 10px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px;
+    gap: 10px;
     margin-bottom: 10px;
     padding: 12px;
     border: 1px solid var(--mist);
@@ -803,12 +829,36 @@ textarea {
   }
 
   .items-table td {
+    min-width: 0;
     padding: 0;
     border: 0;
   }
 
   .items-table td:nth-child(2) {
     grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .items-table td:nth-child(1) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .items-table td:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .items-table td:nth-child(5) {
+    grid-column: 3;
+    grid-row: 2;
+    align-self: end;
+  }
+
+  .items-table td:nth-child(4) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    text-align: right;
   }
 
   .items-table td[data-label]::before {
@@ -821,14 +871,17 @@ textarea {
     letter-spacing: 0.03em;
   }
 
-  .items-table td:nth-child(5) {
-    position: absolute;
-    top: 8px;
-    right: 8px;
+  .items-table td:nth-child(4)::before {
+    text-align: right;
   }
 
-  .items-table .amount-cell {
-    text-align: left;
+  .items-table .item-row input {
+    min-height: 44px;
+  }
+
+  .items-table .btn-icon {
+    width: 44px;
+    height: 44px;
   }
 
   .sheet-table {
@@ -842,6 +895,17 @@ textarea {
 
   .actions .btn {
     flex: 1 1 auto;
+    min-height: 48px;
+  }
+
+  .actions--items {
+    position: sticky;
+    bottom: 8px;
+    z-index: 3;
+    margin: 12px -8px 0;
+    padding: 8px;
+    background: var(--white);
+    border-top: 1px solid var(--mist);
   }
 
   .summary {

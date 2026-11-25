@@ -52,9 +52,25 @@ import '../styles/global.css';
                   <input
                     type="file"
                     id="logo-input"
+                    class="sr-only"
                     accept="image/*"
                     aria-labelledby="logo-label"
                   />
+                  <label for="logo-input" class="btn btn-secondary btn--logo">
+                    <svg
+                      class="icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.6"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"></path>
+                      <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"></path>
+                    </svg>
+                    Elegir logo
+                  </label>
+                  <span id="logo-filename" class="logo-filename" aria-live="polite"></span>
                   <button
                     type="button"
                     id="logo-remove"
@@ -188,7 +204,7 @@ import '../styles/global.css';
               </td>
             </tr>
           </template>
-          <div class="actions">
+          <div class="actions actions--items">
             <button type="button" id="add-item" class="btn btn-secondary">
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                 <path d="M12 5v14M5 12h14" />
@@ -292,6 +308,22 @@ import '../styles/global.css';
         const row = fragment.querySelector('.item-row');
         itemsBody.appendChild(fragment);
         return row;
+      }
+
+      function resetItemRows() {
+        itemsBody.replaceChildren();
+        createItemRow();
+      }
+
+      function addItemAndFocus() {
+        const row = createItemRow();
+        update();
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        row.scrollIntoView({
+          behavior: reduceMotion ? 'auto' : 'smooth',
+          block: 'center',
+        });
+        row.querySelector('[data-field="description"]').focus({ preventScroll: true });
       }
 
       function readForm() {
@@ -511,10 +543,7 @@ import '../styles/global.css';
         update();
       });
 
-      byId('add-item').addEventListener('click', () => {
-        createItemRow();
-        update();
-      });
+      byId('add-item').addEventListener('click', addItemAndFocus);
 
       itemsBody.addEventListener('click', (event) => {
         const button = event.target.closest('[data-action="remove-item"]');
@@ -525,14 +554,14 @@ import '../styles/global.css';
 
       previewRowsBody.addEventListener('click', (event) => {
         if (!event.target.closest('[data-action="add-from-preview"]')) return;
-        createItemRow();
-        update();
+        addItemAndFocus();
       });
 
       byId('logo-input').addEventListener('change', async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
+        byId('logo-filename').textContent = file.name;
         try {
           state.company.logo = await fileToLogo(file);
           saveCompany(state.company);
@@ -546,6 +575,7 @@ import '../styles/global.css';
       byId('logo-remove').addEventListener('click', () => {
         state.company.logo = '';
         byId('logo-input').value = '';
+        byId('logo-filename').textContent = '';
         saveCompany(state.company);
         update();
       });
@@ -560,9 +590,7 @@ import '../styles/global.css';
         byId('iva-percent').value = '0';
         byId('discount-percent').value = '0';
         byId('date').value = todayISO();
-        itemsBody.replaceChildren();
-        createItemRow();
-        createItemRow();
+        resetItemRows();
         update();
       });
 
@@ -581,9 +609,12 @@ import '../styles/global.css';
         }
       }
 
+      if (state.company.logo) {
+        byId('logo-filename').textContent = 'Logo guardado';
+      }
+
       byId('date').value = todayISO();
-      createItemRow();
-      createItemRow();
+      resetItemRows();
       update();
     </script>
   </body>
